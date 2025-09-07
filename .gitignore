@@ -24,9 +24,9 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-.vscode/ # настройки VS Code, если кто-то использует другую IDE, то может убрать
-.idea/ # настройки JetBra IDE
-.DS_Store # файлы MacOS
-thumbs.db # кэш изображений Windows
-config.json # файл с настройками (может содержать чувствительные данные)
+.vscode/ 
+.idea/ 
+.DS_Store 
+thumbs.db 
+config.json 
 outputs/ 
