@@ -30,3 +30,5 @@ MANIFEST
 thumbs.db 
 config.json 
 outputs/ 
+build/
+dist/

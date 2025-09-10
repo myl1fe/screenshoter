@@ -36,28 +36,41 @@ class ScreenshotScheduler:
             self.jobs[job.id] = job
     
     def add_cron_job(self, job_id, hour, minute, days_of_week, job_func, args=None):
+
+        try:
+            existing_job = self.scheduler.get_job(job_id)
+
+            if existing_job:
+                logging.info(f'Task {job_id} already exists, replace')
+                self.scheduler.remove_job(job_id)
+                if job_id in self.jobs:
+                    del self.jobs[job_id]
         
-        days_cron = ','.join(map(str, days_of_week))
+            days_cron = ','.join(map(str, days_of_week))
 
-        trigger = CronTrigger(
-            day_of_week = days_cron,
-            hour=hour,
-            minute=minute,
-            timezone='Europe/Moscow'
-        )
+            trigger = CronTrigger(
+                day_of_week = days_cron,
+                hour=hour,
+                minute=minute,
+                timezone='Europe/Moscow'
+            )
 
-        job = self.scheduler.add_job(
-            job_func,
-            trigger,
-            args = args or [],
-            id = job_id
-        )
+            job = self.scheduler.add_job(
+                job_func,
+                trigger,
+                args = args or [],
+                id = job_id
+            )
 
 
-        self.jobs[job_id] = job
+            self.jobs[job_id] = job
 
-        print(f'task {job_id} added for {hour} and {minute} by {days_of_week}')
-        return job_id
+            print(f'task {job_id} added for {hour} and {minute} by {days_of_week}')
+            return job_id
+        except Exception as e:
+            logging.info(f'failed added task  {job_id}: {e}')
+            return None
+
 
     def remove_job(self, job_id):
         if job_id in self.jobs:
