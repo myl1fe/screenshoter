@@ -14,6 +14,8 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         self.setup_gui()
         self.setup_tray()
         self.setup_signals()
+        self.populate_jobs_list() 
+
 
     def setup_gui(self):
         self.setWindowTitle('скриншотер')
@@ -66,15 +68,23 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         self.jobs_list = QtWidgets.QListWidget()
         layout.addWidget(self.jobs_list)
 
+        self.clear_btn = QtWidgets.QPushButton("Удалить все задачи")
+        button_layout.addWidget(self.clear_btn)
+
+        self.conflict_label = QtWidgets.QLabel("")
+        self.conflict_label.setStyleSheet("color: red;")
+        layout.addWidget(self.conflict_label)
 
     def setup_tray(self):
 
         if not QSystemTrayIcon.isSystemTrayAvailable():
+            QMessageBox.critical(self, "Ошибка", " трей недоступен.")
             return
 
         self.tray_icon = QSystemTrayIcon(self)
 
         icon_path_tray = os.path.join('media', 'icons', 'icon-16x16.ico')
+        logging.info("Иконка трея установлена.")
         icon_path_panel = os.path.join('media', 'icons', 'icon-32x32.ico')
         #icon_path_shortcut = os.path.join('media', 'icons', 'icon-256x256.ico')
 
@@ -84,7 +94,8 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         else:
             self.tray_icon.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_ComputerIcon))
             logging.warning(f"Иконка не найдена по пути: {icon_path_tray}")
-        
+
+        self.tray_icon.setVisible(True)       
         
         tray_menu = QMenu()
         show_action = QAction("Показать", self)
@@ -105,54 +116,115 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         
         
         self.tray_icon.activated.connect(self.on_tray_activate)  
+    
     def setup_signals(self):
 
         self.start_btn.clicked.connect(self.on_start)
         self.stop_btn.clicked.connect(self.on_stop)
-        
+        self.clear_btn.clicked.connect(self.on_clear_all)
+        self.jobs_list.itemClicked.connect(self.on_job_selected)
+
+
+
     def on_start(self):
         try:
             
             time_str = self.time_edit.time().toString("HH:mm")
             hour, minute = map(int, time_str.split(":"))
-            
             selected_days = []
+
+
             for i, checkbox in enumerate(self.days_checkboxes):
                 if checkbox.isChecked():
                     selected_days.append(i)
-            
             if not selected_days:
-                QMessageBox.warning(self, "Ошибка", "Выберите хотя бы один день недели")
+                QMessageBox.warning(self, 'Необходимо выбрать хотя бы один день')
                 return
             
             
-            job_id = self.scheduler.add_cron_job(
-                "scheduled_screenshot",
-                hour,
-                minute,
-                selected_days,
-                self.take_screenshot_wrapper
-            )
+            job_id = "scheduled_screenshot"
+            if self.scheduler.check_job_conflict(job_id):
+                self.conflict_label.setText(f"Задача {job_id} уже существует!")
+                reply = QMessageBox.question(
+                    self, 
+                    "Конфликт задач", 
+                    f"Задача {job_id} уже существует. Заменить?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+                
+                if reply == QMessageBox.No:
+                    return
+
+
+            result = self.scheduler.add_cron_job(
+                job_id = job_id,
+                hour = hour,
+                minute = minute,
+                days_of_week = selected_days,
+                args = ['screenshots']
+                )
             
-            if job_id:
-                
-                self.scheduler.start()
-                
+            if result:
+                if not self.scheduler.scheduler.running:
+                    self.scheduler.start()    
                 
                 self.start_btn.setEnabled(False)
                 self.stop_btn.setEnabled(True)
                 self.status_label.setText(f"Статус: Приложение активно запланировано на {time_str}")
-                
-                
-                self.jobs_list.addItem(f"Скриншот в {time_str} по дням: {selected_days}")
-                
-                logging.info(f"Задача успешно добавлена: {job_id}")
+                self.conflict_label.setText("")
+                self.populate_jobs_list()
             else:
-                QMessageBox.critical(self, "Ошибка", "Не удалось добавить задачу")
+                QMessageBox.critical(self, "Ошибка", "Не удалось добавить задачу")        
+            
+                # days_names = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+                # selected_days_names = [days_names[i] for i in selected_days]
+                # self.jobs_list.addItem(f"Скриншот в {time_str} по дням: {', '.join(selected_days_names)}")
+
+
+            
                 
         except Exception as e:
             logging.error(f"Ошибка при запуске планировщика: {e}")
             QMessageBox.critical(self, "Ошибка", f"Не удалось запустить приложение: {str(e)}")
+
+    def on_interval_start(self):
+        
+        try:
+            minutes = self.interval_spinbox.value()
+            job_id = "interval_screenshot"
+            
+            
+            if self.scheduler.check_job_conflict(job_id):
+                self.conflict_label.setText(f"Задача {job_id} уже существует!")
+                reply = QMessageBox.question(
+                    self, 
+                    "Конфликт задач", 
+                    f"Задача {job_id} уже существует. Заменить?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+                
+                if reply == QMessageBox.No:
+                    return
+            
+            
+            result = self.scheduler.add_interval_job(
+                job_id=job_id,
+                minutes=minutes,
+                args=['screenshots']
+            )
+            
+            if result:
+                self.scheduler.start()
+                self.status_label.setText(f"Статус: Активно - интервал повторений каждые: {minutes} мин")
+                self.conflict_label.setText("") 
+                self.populate_jobs_list() 
+                logging.info(f"Интервальная задача добавлена: каждые {minutes} минут")
+            else:
+                QMessageBox.critical(self, "Ошибка", "Не удалось добавить интервальную задачу")
+                
+        except Exception as e:
+            logging.error(f"Ошибка при запуске интервальной задачи: {e}")
+            QMessageBox.critical(self, "Ошибка", f"Не удалось запустить интервальную задачу: {str(e)}")
 
     def on_stop(self):
         try:                
@@ -168,7 +240,20 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         except Exception as e:
             logging.error(f"Ошибка при остановке планировщика: {e}")
             QMessageBox.critical(self, "Ошибка", f"Не удалось остановить планировщик: {str(e)}")
+
+    def on_job_selected(self, item):
+    
+        job_id = item.text().split(":")[0].strip()
+        job_info = self.scheduler.get_detailed_job_info(job_id)
         
+        if job_info:
+            info_text = f"ID: {job_info['id']}\n"
+            info_text += f"Следующий запуск: {job_info['next_run_time']}\n"
+            info_text += f"Триггер: {job_info['trigger']}\n"
+            info_text += f"Аргументы: {job_info['args']}"
+            
+            self.status_label.setText(info_text)
+
     def take_screenshot_wrapper(self):
         
         try:
@@ -188,8 +273,33 @@ class ScreenshotApp(QtWidgets.QMainWindow):
                 logging.error("Не удалось создать скриншоты")
                 
         except Exception as e:
-            logging.error(f"Ошибка при создании скриншотов: {e}")
+            logger.error(f"Ошибка при создании скриншотов: {e}")
     
+    def  populate_jobs_list(self):
+        self.jobs_list.clear()
+        for job_id in self.scheduler.jobs.keys():
+            job_info = self.scheduler.get_job_info(job_id)
+            self.jobs_list.addItem(f"{job_id}: {job_info}")
+
+    def on_clear_all(self):
+        
+        reply = QMessageBox.question(
+            self, 
+            "Подтверждение", 
+            "Вы уверены, что хотите удалить все задачи?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            if self.scheduler.remove_all_jobs():
+                self.populate_jobs_list()
+                self.status_label.setText("Статус: Все задачи удалены")
+                self.start_btn.setEnabled(True)
+                self.stop_btn.setEnabled(False)
+                QMessageBox.information(self, "Успех", "Все задачи успешно удалены")
+            else:
+                QMessageBox.critical(self, "Ошибка", "Не удалось удалить задачи")
+
     def show_window(self):
         
         self.show()
@@ -207,7 +317,9 @@ class ScreenshotApp(QtWidgets.QMainWindow):
             logger.error(f"Ошибка при остановке планировщика: {e}")
         finally:
             QtWidgets.qApp.quit()
-    
+
+
+
     def on_tray_activate(self, reason):
         
         if reason == QSystemTrayIcon.DoubleClick:
