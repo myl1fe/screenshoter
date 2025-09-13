@@ -74,6 +74,19 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         self.conflict_label = QtWidgets.QLabel("")
         self.conflict_label.setStyleSheet("color: red;")
         layout.addWidget(self.conflict_label)
+        
+        interval_layout = QtWidgets.QHBoxLayout()
+        interval_layout.addWidget(QtWidgets.QLabel("Интервал (минуты):"))
+        self.interval_spinbox = QtWidgets.QSpinBox()
+        self.interval_spinbox.setMinimum(1)
+        self.interval_spinbox.setMaximum(1440)  
+        self.interval_spinbox.setValue(60)  
+        interval_layout.addWidget(self.interval_spinbox)
+        
+        self.interval_start_btn = QtWidgets.QPushButton("Старт интервал")
+        interval_layout.addWidget(self.interval_start_btn)
+        
+        layout.addLayout(interval_layout)
 
     def setup_tray(self):
 
@@ -123,6 +136,7 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         self.stop_btn.clicked.connect(self.on_stop)
         self.clear_btn.clicked.connect(self.on_clear_all)
         self.jobs_list.itemClicked.connect(self.on_job_selected)
+        self.interval_start_btn.clicked.connect(self.on_interval_start) 
 
 
 
@@ -273,13 +287,13 @@ class ScreenshotApp(QtWidgets.QMainWindow):
                 logging.error("Не удалось создать скриншоты")
                 
         except Exception as e:
-            logger.error(f"Ошибка при создании скриншотов: {e}")
+            logging.error(f"Ошибка при создании скриншотов: {e}")
     
-    def  populate_jobs_list(self):
+    def populate_jobs_list(self):
         self.jobs_list.clear()
-        for job_id in self.scheduler.jobs.keys():
-            job_info = self.scheduler.get_job_info(job_id)
-            self.jobs_list.addItem(f"{job_id}: {job_info}")
+        for job_id, job in self.scheduler.jobs.items():
+            job_type = "По расписанию" if "cron" in job_id else "По интервалу"
+            self.jobs_list.addItem(f"{job_id} ({job_type}): {self.scheduler.get_job_info(job_id)}")
 
     def on_clear_all(self):
         

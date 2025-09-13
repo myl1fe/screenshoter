@@ -5,6 +5,7 @@ from datetime import datetime
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.jobstores.base import ConflictingIdError
 
 import logging 
@@ -19,7 +20,7 @@ logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 class ScreenshotScheduler:
     def __init__(self, db_path='scheduler.db'):
 
-        self.load_existing_jobs()
+        
 
 
         jobstores = {
@@ -30,6 +31,7 @@ class ScreenshotScheduler:
         self.jobs = {}
         
         self.start()
+        self.load_existing_jobs()
         atexit.register(self.shutdown)
     
     def shutdown(self):
@@ -90,12 +92,7 @@ class ScreenshotScheduler:
                 self.remove_existing_job(job_id)
             
             
-            # existing_job = self.scheduler.get_job(job_id)
-            # if existing_job:
-            #     logging.info(f'Task {job_id} already exists, replace')
-            #     self.scheduler.remove_job(job_id)
-            #     if job_id in self.jobs:
-            #         del self.jobs[job_id]
+            
         
             days_cron = ','.join(map(str, days_of_week))
 
@@ -107,11 +104,11 @@ class ScreenshotScheduler:
             )
 
             job = self.scheduler.add_job(
-                lambda: self.take_screenshot_handler,
-                trigger,
-                args = args, #or [],
-                id = job_id
-            )
+                                            self.take_screenshot_handler,
+                                            trigger,
+                                            args=args or [],
+                                            id=job_id
+                                        )
 
 
             self.jobs[job_id] = job
@@ -135,10 +132,11 @@ class ScreenshotScheduler:
             trigger = IntervalTrigger(minutes=minutes)
 
             job = self.scheduler.add_job(
-                lambda: self._execute_screenshot_task(args),
-                trigger,
-                id=job_id
-            )
+                                        self.take_screenshot_handler,  
+                                        trigger,
+                                        args=args or [],
+                                        id=job_id
+                                    )
 
             self.jobs[job_id] = job
             logging.info(f'Интервальная задача {job_id} добавлена: каждые {minutes} минут')
@@ -151,24 +149,14 @@ class ScreenshotScheduler:
             return None
 
     @staticmethod
-    def take_screenshot_handler(self, save_dir='screenshots'):
+    def take_screenshot_handler(save_dir='screenshots'):
         try:
             take_screenshots_mss(save_dir)
         except Exception as e:
             print(f"Ошибка в задаче: {e}")
 
 
-    def get_detailed_job_info(self, job_id):
-        if job_id in self.jobs:
-            job = self.jobs[job_id]
-            info = {
-                'id': job.id,
-                'next_run_time': job.next_run_time,
-                'trigger': str(job.trigger),
-                'args': job.args
-            }
-            return info
-        return None
+    
 
 
         def remove_job(self, job_id):
@@ -197,3 +185,15 @@ class ScreenshotScheduler:
         except Exception as e:
             logging.error(f'Ошибка при удалении задачи {job_id}: {e}')
             return False
+
+    def get_detailed_job_info(self, job_id):
+        if job_id in self.jobs:
+            job = self.jobs[job_id]
+            info = {
+                'id': job.id,
+                'next_run_time': job.next_run_time,
+                'trigger': str(job.trigger),
+                'args': job.args
+                }
+            return info
+        return None
