@@ -20,31 +20,42 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         self.setup_signals()
         self.populate_jobs_list() 
 
-
+    
     def setup_gui(self):
         self.setWindowTitle('скриншотер')
-        self.setGeometry(100, 100, 500, 400)
-
+        self.setGeometry(100, 100, 600, 500)  # Увеличим высоту для новых элементов
 
         central_widget = QtWidgets.QWidget()
         self.setCentralWidget(central_widget)
         layout = QtWidgets.QVBoxLayout(central_widget)
 
+        # Вкладки для организации интерфейса
+        self.tabs = QtWidgets.QTabWidget()
+        layout.addWidget(self.tabs)
+        
+        # Основная вкладка
+        main_tab = QtWidgets.QWidget()
+        self.tabs.addTab(main_tab, "Основные настройки")
+        main_layout = QtWidgets.QVBoxLayout(main_tab)
+        
+        # Вкладка для email
+        email_tab = QtWidgets.QWidget()
+        self.tabs.addTab(email_tab, "Настройки email")
+        email_layout = QtWidgets.QVBoxLayout(email_tab)
 
+        # Основные настройки (на первой вкладке)
         time_layout = QtWidgets.QHBoxLayout()
         time_layout.addWidget(QtWidgets.QLabel("Время:"))
         self.time_edit = QtWidgets.QTimeEdit()
         self.time_edit.setTime(QtCore.QTime.currentTime())
         time_layout.addWidget(self.time_edit)
-        layout.addLayout(time_layout)
+        main_layout.addLayout(time_layout)
 
-        
         days_group = QtWidgets.QGroupBox("Дни недели")
         days_layout = QtWidgets.QGridLayout()
         
         self.days_checkboxes = []
         days = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
-
 
         for i, day in enumerate(days):
             checkbox = QtWidgets.QCheckBox(day)
@@ -53,33 +64,38 @@ class ScreenshotApp(QtWidgets.QMainWindow):
             self.days_checkboxes.append(checkbox)
             days_layout.addWidget(checkbox, i // 4, i % 4)        
         days_group.setLayout(days_layout)
-        layout.addWidget(days_group)
+        main_layout.addWidget(days_group)
+
+        # Чекбокс для отправки email (на основной вкладке)
+        self.email_cron_checkbox = QtWidgets.QCheckBox("Отправить скриншот по email")
+        main_layout.addWidget(self.email_cron_checkbox)
 
         button_layout = QtWidgets.QHBoxLayout()
         self.start_btn = QtWidgets.QPushButton("Старт")
         self.stop_btn = QtWidgets.QPushButton("Стоп")
         self.stop_btn.setEnabled(False)
 
-
         button_layout.addWidget(self.start_btn)
         button_layout.addWidget(self.stop_btn)
-        layout.addLayout(button_layout)
+        main_layout.addLayout(button_layout)
 
-        
         self.status_label = QtWidgets.QLabel("Статус: Неактивно")
-        layout.addWidget(self.status_label)
+        main_layout.addWidget(self.status_label)
 
         self.jobs_list = QtWidgets.QListWidget()
-        layout.addWidget(self.jobs_list)
+        main_layout.addWidget(self.jobs_list)
 
         self.clear_btn = QtWidgets.QPushButton("Удалить все задачи")
         button_layout.addWidget(self.clear_btn)
 
         self.conflict_label = QtWidgets.QLabel("")
         self.conflict_label.setStyleSheet("color: red;")
-        layout.addWidget(self.conflict_label)
+        main_layout.addWidget(self.conflict_label)
         
+        # Интервальные настройки (на основной вкладке)
+        interval_group = QtWidgets.QGroupBox("Интервальный режим")
         interval_layout = QtWidgets.QHBoxLayout()
+        
         interval_layout.addWidget(QtWidgets.QLabel("Интервал (минуты):"))
         self.interval_spinbox = QtWidgets.QSpinBox()
         self.interval_spinbox.setMinimum(1)
@@ -90,7 +106,54 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         self.interval_start_btn = QtWidgets.QPushButton("Старт интервал")
         interval_layout.addWidget(self.interval_start_btn)
         
-        layout.addLayout(interval_layout)
+        self.email_interval_checkbox = QtWidgets.QCheckBox("Отправить скриншот по email")
+        interval_layout.addWidget(self.email_interval_checkbox)
+        
+        interval_group.setLayout(interval_layout)
+        main_layout.addWidget(interval_group)
+
+        # Настройки email (на второй вкладке)
+        email_settings_group = QtWidgets.QGroupBox("Настройки SMTP")
+        email_settings_layout = QtWidgets.QGridLayout()
+        
+        email_settings_layout.addWidget(QtWidgets.QLabel("SMTP сервер:"), 0, 0)
+        self.smtp_server_edit = QtWidgets.QLineEdit("smtp.gmail.com")
+        email_settings_layout.addWidget(self.smtp_server_edit, 0, 1)
+        
+        email_settings_layout.addWidget(QtWidgets.QLabel("Порт:"), 1, 0)
+        self.smtp_port_edit = QtWidgets.QSpinBox()
+        self.smtp_port_edit.setRange(1, 65535)
+        self.smtp_port_edit.setValue(587)
+        email_settings_layout.addWidget(self.smtp_port_edit, 1, 1)
+        
+        email_settings_layout.addWidget(QtWidgets.QLabel("Логин:"), 2, 0)
+        self.email_login_edit = QtWidgets.QLineEdit()
+        email_settings_layout.addWidget(self.email_login_edit, 2, 1)
+        
+        email_settings_layout.addWidget(QtWidgets.QLabel("Пароль:"), 3, 0)
+        self.email_password_edit = QtWidgets.QLineEdit()
+        self.email_password_edit.setEchoMode(QtWidgets.QLineEdit.Password)
+        email_settings_layout.addWidget(self.email_password_edit, 3, 1)
+        
+        email_settings_layout.addWidget(QtWidgets.QLabel("От кого:"), 4, 0)
+        self.email_from_edit = QtWidgets.QLineEdit()
+        email_settings_layout.addWidget(self.email_from_edit, 4, 1)
+        
+        email_settings_layout.addWidget(QtWidgets.QLabel("Кому:"), 5, 0)
+        self.email_to_edit = QtWidgets.QLineEdit()
+        email_settings_layout.addWidget(self.email_to_edit, 5, 1)
+        
+        self.email_enabled_checkbox = QtWidgets.QCheckBox("Включить отправку email")
+        email_settings_layout.addWidget(self.email_enabled_checkbox, 6, 0, 1, 2)
+        
+        self.test_email_btn = QtWidgets.QPushButton("Тест отправки email")
+        email_settings_layout.addWidget(self.test_email_btn, 7, 0, 1, 2)
+        
+        email_settings_group.setLayout(email_settings_layout)
+        email_layout.addWidget(email_settings_group)
+        
+        # Загрузка сохраненных настроек
+        self.load_email_settings()
 
 
         
@@ -143,7 +206,8 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         self.clear_btn.clicked.connect(self.on_clear_all)
         self.jobs_list.itemClicked.connect(self.on_job_selected)
         self.interval_start_btn.clicked.connect(self.on_interval_start)
-        self.jobs_list.itemDoubleClicked.connect(self.on_job_double_clicked) 
+        self.jobs_list.itemDoubleClicked.connect(self.on_job_double_clicked)
+        self.test_email_btn.clicked.connect(self.on_test_email) 
         
 
 
@@ -166,6 +230,26 @@ class ScreenshotApp(QtWidgets.QMainWindow):
             if not selected_days:
                 QMessageBox.warning(self, 'Необходимо выбрать хотя бы один день')
                 return
+
+            email_enabled = self.email_enabled_checkbox.isChecked()
+            send_email = self.email_cron_checkbox.isChecked()
+            if send_email and not email_enabled:
+                QMessageBox.warning(self, 'Ошибка', 
+                               'Для отправки email необходимо включить опцию "Включить отправку email" в настройках')
+                return
+
+            #настрйки email
+            self.scheduler.configure_email(
+            self.smtp_server_edit.text(),
+            self.smtp_port_edit.value(),
+            self.email_login_edit.text(),
+            self.email_password_edit.text(),
+            self.email_from_edit.text(),
+            self.email_to_edit.text(),
+            email_enabled
+        )           
+            self.save_email_settings()
+
             job_id = "scheduled_screenshot"
             
             if self.scheduler.check_job_conflict(job_id):
@@ -198,12 +282,18 @@ class ScreenshotApp(QtWidgets.QMainWindow):
                 self.status_label.setText(f"Статус: Приложение активно запланировано на {time_str}")
                 self.conflict_label.setText("")
                 self.populate_jobs_list()
+                self.tray_icon.showMessage(
+                "Скриншотер",
+                f"Задача запущена. Скриншоты будут создаваться в {time_str} по выбранным дням.",
+                QSystemTrayIcon.Information,
+                3000
+            )
             else:
                 QMessageBox.critical(self, "Ошибка", "Не удалось добавить задачу")        
             
-                # days_names = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
-                # selected_days_names = [days_names[i] for i in selected_days]
-                # self.jobs_list.addItem(f"Скриншот в {time_str} по дням: {', '.join(selected_days_names)}")
+            #конфигурация для email
+
+
 
 
             
@@ -213,40 +303,59 @@ class ScreenshotApp(QtWidgets.QMainWindow):
             QMessageBox.critical(self, "Ошибка", f"Не удалось запустить приложение: {str(e)}")
 
     def on_interval_start(self):
-        
         try:
-            minutes = self.interval_spinbox.value()
+            
+            minutes = self.interval_spinbox.value()            
             job_id = f"interval_screenshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             
-
+            #настраиваем email
+            email_enabled = self.email_enabled_checkbox.isChecked()
+            send_email = self.email_interval_checkbox.isChecked()
             
-            
-            if self.scheduler.check_job_conflict(job_id):
-                self.conflict_label.setText(f"Задача {job_id} уже существует!")
-                reply = QMessageBox.question(
-                    self, 
-                    "Конфликт задач", 
-                    f"Задача {job_id} уже существует. Заменить?",
-                    QMessageBox.Yes | QMessageBox.No
-                )
+            if send_email and not email_enabled:
+                QMessageBox.warning(self, 'Ошибка', 
+                                'Для отправки email необходимо включить опцию "Включить отправку email" в настройках')
+                return
                 
-                if reply == QMessageBox.No:
-                    return
+            #настройки email
+            self.scheduler.configure_email(
+                self.smtp_server_edit.text(),
+                self.smtp_port_edit.value(),
+                self.email_login_edit.text(),
+                self.email_password_edit.text(),
+                self.email_from_edit.text(),
+                self.email_to_edit.text(),
+                email_enabled
+            )
+            
+            
+            self.save_email_settings()
             
             
             result = self.scheduler.add_interval_job(
                 job_id=job_id,
                 minutes=minutes,
-                args=['screenshots']
+                args=['screenshots', send_email]  
             )
             
             if result:
-                if not self.scheduler.is_running(): 
-                    self.scheduler.start()  
-
+                
+                if not self.scheduler.is_running():
+                    self.scheduler.start()
+                    
+                #
                 self.status_label.setText(f"Статус: Активно - интервал повторений каждые: {minutes} мин")
                 self.conflict_label.setText("") 
-                self.populate_jobs_list() 
+                self.populate_jobs_list()
+                
+                #
+                self.tray_icon.showMessage(
+                    "Скриншотер",
+                    f"Интервальная задача запущена. Скриншоты будут создаваться каждые {minutes} минут.",
+                    QSystemTrayIcon.Information,
+                    3000
+                )
+                
                 logging.info(f"Интервальная задача добавлена: каждые {minutes} минут")
             else:
                 QMessageBox.critical(self, "Ошибка", "Не удалось добавить интервальную задачу")
@@ -408,6 +517,48 @@ class ScreenshotApp(QtWidgets.QMainWindow):
             2000
         )
 
+    def save_email_settings(self):
+    
+        settings = QtCore.QSettings("Screenshoter", "EmailSettings")
+        settings.setValue("smtp_server", self.smtp_server_edit.text())
+        settings.setValue("smtp_port", self.smtp_port_edit.value())
+        settings.setValue("email_login", self.email_login_edit.text())
+        settings.setValue("email_from", self.email_from_edit.text())
+        settings.setValue("email_to", self.email_to_edit.text())
+        settings.setValue("email_enabled", self.email_enabled_checkbox.isChecked())
+        logging.info("Настройки email сохранены")
+
+    def load_email_settings(self):
+        
+        settings = QtCore.QSettings("Screenshoter", "EmailSettings")
+        self.smtp_server_edit.setText(settings.value("smtp_server", "smtp.gmail.com"))
+        self.smtp_port_edit.setValue(int(settings.value("smtp_port", 587)))
+        self.email_login_edit.setText(settings.value("email_login", ""))
+        self.email_from_edit.setText(settings.value("email_from", ""))
+        self.email_to_edit.setText(settings.value("email_to", ""))
+        self.email_enabled_checkbox.setChecked(settings.value("email_enabled", False, type=bool))
+        logging.info("Настройки email загружены")
+
+    def on_test_email(self):
+        
+        self.scheduler.configure_email(
+            self.smtp_server_edit.text(),
+            self.smtp_port_edit.value(),
+            self.email_login_edit.text(),
+            self.email_password_edit.text(),
+            self.email_from_edit.text(),
+            self.email_to_edit.text(),
+            self.email_enabled_checkbox.isChecked()
+        )
+        
+        
+        if self.scheduler.email_sender.send_email(
+            "Тестовое сообщение от Скриншотера",
+            "Это тестовое сообщение было отправлено для проверки настроек email."
+        ):
+            QMessageBox.information(self, "Успех", "Тестовое сообщение отправлено успешно!")
+        else:
+            QMessageBox.critical(self, "Ошибка", "Не удалось отправить тестовое сообщение. Проверьте настройки.")
 
 
 def main():

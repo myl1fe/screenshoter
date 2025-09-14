@@ -1,4 +1,5 @@
 from screenshoter import take_screenshots_mss
+from email_sender import EmailSender
 
 from datetime import datetime
 
@@ -33,6 +34,7 @@ class ScreenshotScheduler:
         # self.start()
         self.load_existing_jobs()
         atexit.register(self.shutdown)
+        self.email_sender = EmailSender()
     
     def is_running(self):
         return self.scheduler.running
@@ -154,11 +156,19 @@ class ScreenshotScheduler:
             return None
 
     @staticmethod
-    def take_screenshot_handler(save_dir='screenshots'):
+    def take_screenshot_handler(self, save_dir='screenshots', send_email=False):
         try:
-            take_screenshots_mss(save_dir)
+            saved_screens = take_screenshots_mss(save_dir)
+
+            if send_email and saved_screens and self.email_sender.enabled:
+                subject = f"Скриншоты от {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                body = "Автоматически отправленные скриншоты"
+                self.email_sender.send_email(subject, body, saved_screens)
+                
+            return saved_screens
         except Exception as e:
             print(f"Ошибка в задаче: {e}")
+            return None
 
 
     
@@ -202,3 +212,6 @@ class ScreenshotScheduler:
                 }
             return info
         return None
+
+    def configure_email(self, smtp_server, smtp_port, username, password, from_addr, to_addr, enabled):
+        self.email_sender.configure(smtp_server, smtp_port, username, password, from_addr, to_addr, enabled)
