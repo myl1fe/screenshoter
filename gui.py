@@ -1,10 +1,14 @@
+import os
+import logging
+from datetime import datetime
 import sys
+
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QSystemTrayIcon, QMenu, QAction, QMessageBox
 from task_scheduler import ScreenshotScheduler
 from screenshoter import take_screenshots_mss
-import os
-import logging
+
+
 
 
 class ScreenshotApp(QtWidgets.QMainWindow):
@@ -88,6 +92,8 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         
         layout.addLayout(interval_layout)
 
+
+        
     def setup_tray(self):
 
         if not QSystemTrayIcon.isSystemTrayAvailable():
@@ -136,7 +142,9 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         self.stop_btn.clicked.connect(self.on_stop)
         self.clear_btn.clicked.connect(self.on_clear_all)
         self.jobs_list.itemClicked.connect(self.on_job_selected)
-        self.interval_start_btn.clicked.connect(self.on_interval_start) 
+        self.interval_start_btn.clicked.connect(self.on_interval_start)
+        self.jobs_list.itemDoubleClicked.connect(self.on_job_double_clicked) 
+        
 
 
 
@@ -155,8 +163,11 @@ class ScreenshotApp(QtWidgets.QMainWindow):
                 QMessageBox.warning(self, 'Необходимо выбрать хотя бы один день')
                 return
             
-            
+            if not selected_days:
+                QMessageBox.warning(self, 'Необходимо выбрать хотя бы один день')
+                return
             job_id = "scheduled_screenshot"
+            
             if self.scheduler.check_job_conflict(job_id):
                 self.conflict_label.setText(f"Задача {job_id} уже существует!")
                 reply = QMessageBox.question(
@@ -179,7 +190,7 @@ class ScreenshotApp(QtWidgets.QMainWindow):
                 )
             
             if result:
-                if not self.scheduler.scheduler.running:
+                if not self.scheduler.is_running():
                     self.scheduler.start()    
                 
                 self.start_btn.setEnabled(False)
@@ -205,7 +216,9 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         
         try:
             minutes = self.interval_spinbox.value()
-            job_id = "interval_screenshot"
+            job_id = f"interval_screenshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            
+
             
             
             if self.scheduler.check_job_conflict(job_id):
@@ -228,7 +241,9 @@ class ScreenshotApp(QtWidgets.QMainWindow):
             )
             
             if result:
-                self.scheduler.start()
+                if not self.scheduler.is_running(): 
+                    self.scheduler.start()  
+
                 self.status_label.setText(f"Статус: Активно - интервал повторений каждые: {minutes} мин")
                 self.conflict_label.setText("") 
                 self.populate_jobs_list() 
@@ -241,7 +256,10 @@ class ScreenshotApp(QtWidgets.QMainWindow):
             QMessageBox.critical(self, "Ошибка", f"Не удалось запустить интервальную задачу: {str(e)}")
 
     def on_stop(self):
-        try:                
+        try: 
+            if not self.scheduler.is_running():  
+                self.scheduler.start()  
+               
             self.scheduler.shutdown()  
             self.start_btn.setEnabled(True)
             self.stop_btn.setEnabled(False)
@@ -258,6 +276,9 @@ class ScreenshotApp(QtWidgets.QMainWindow):
     def on_job_selected(self, item):
     
         job_id = item.text().split(":")[0].strip()
+        if not job_id:  
+            QMessageBox.warning(self, "Ошибка", "Не удалось определить ID задачи")
+            return
         job_info = self.scheduler.get_detailed_job_info(job_id)
         
         if job_info:
@@ -291,9 +312,20 @@ class ScreenshotApp(QtWidgets.QMainWindow):
     
     def populate_jobs_list(self):
         self.jobs_list.clear()
-        for job_id, job in self.scheduler.jobs.items():
-            job_type = "По расписанию" if "cron" in job_id else "По интервалу"
-            self.jobs_list.addItem(f"{job_id} ({job_type}): {self.scheduler.get_job_info(job_id)}")
+             
+        for job_id in self.scheduler.jobs.keys():
+            job_info = self.scheduler.get_job_info(job_id)
+        
+        
+            if job_id.startswith('interval_screenshot'):
+                task_type = "Интервальная"
+            else:
+                task_type = "По расписанию"
+                
+            item_text = f"{task_type}: ID: {job_id}, {job_info}"
+            item = QtWidgets.QListWidgetItem(item_text)
+            item.setData(QtCore.Qt.UserRole, job_id)
+            self.jobs_list.addItem(item)
 
     def on_clear_all(self):
         
@@ -328,11 +360,33 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         try:
             self.scheduler.shutdown()
         except Exception as e:
-            logger.error(f"Ошибка при остановке планировщика: {e}")
+            logging.error(f"Ошибка при остановке планировщика: {e}")
         finally:
             QtWidgets.qApp.quit()
 
 
+
+    def on_job_double_clicked(self, item):
+    # Получаем job_id из данных элемента
+        job_id = item.data(QtCore.Qt.UserRole)
+        if not job_id:
+            QMessageBox.warning(self, "Ошибка", "Не удалось определить ID задачи")
+            return
+
+        reply = QMessageBox.question(
+            self, 
+            "Удаление задачи", 
+            f"Удалить задачу {job_id}?",
+            QMessageBox.Yes | QMessageBox.No
+        )   
+        
+        if reply == QMessageBox.Yes:
+            if self.scheduler.remove_existing_job(job_id):
+                self.populate_jobs_list()
+                QMessageBox.information(self, "Успех", f"Задача {job_id} удалена")
+            else:
+                QMessageBox.critical(self, "Ошибка", f"Не удалось удалить задачу {job_id}")
+   
 
     def on_tray_activate(self, reason):
         
@@ -353,6 +407,8 @@ class ScreenshotApp(QtWidgets.QMainWindow):
             QSystemTrayIcon.Information,
             2000
         )
+
+
 
 def main():
     

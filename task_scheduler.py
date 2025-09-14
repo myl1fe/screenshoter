@@ -30,9 +30,12 @@ class ScreenshotScheduler:
         self.scheduler = BackgroundScheduler(jobstores=jobstores)
         self.jobs = {}
         
-        self.start()
+        # self.start()
         self.load_existing_jobs()
         atexit.register(self.shutdown)
+    
+    def is_running(self):
+        return self.scheduler.running
     
     def shutdown(self):
         self.scheduler.shutdown()
@@ -51,12 +54,16 @@ class ScreenshotScheduler:
     def load_existing_jobs(self):
                 
         try:
+            
             jobs = self.scheduler.get_jobs()
             for job in jobs:
                 self.jobs[job.id] = job
                 logging.info(f'tack loaded {job.id}')
+            
+                
         except Exception as e:
             logging.error(f'error task {e}')
+            self.jobs = {}
                 
     def check_job_conflict(self, job_id):
         return job_id in self.jobs
@@ -116,9 +123,7 @@ class ScreenshotScheduler:
             logging.info(f'task {job_id} added for {hour} and {minute} by {days_of_week}')
             return job_id
         
-        except Exception as e:
-            logging.info(f'failed added task  {job_id}: {e}')
-            return None
+        
         except Exception as e:
             logging.error(f'Не удалось добавить задачу {job_id}: {e}')
             return None
@@ -159,13 +164,13 @@ class ScreenshotScheduler:
     
 
 
-        def remove_job(self, job_id):
-            if job_id in self.jobs:
-                self.scheduler.remove_job(job_id)
-                del self.jobs[job_id]
-                print(f'task {job_id} delleted')
-                return True
-            return False
+    # def remove_job(self, job_id):
+    #     if job_id in self.jobs:
+    #         self.scheduler.remove_job(job_id)
+    #         del self.jobs[job_id]
+    #         logging.info(f'task {job_id} deleted')  
+    #         return True
+    #     return False
     
     
 
