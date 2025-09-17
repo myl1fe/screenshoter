@@ -158,14 +158,17 @@ class ScreenshotScheduler:
     @staticmethod
     def take_screenshot_handler(self, save_dir='screenshots', send_email=False):
         try:
+            logging.info(f"Выполнение задачи: save_dir={save_dir}, send_email={send_email}")
             saved_screens = take_screenshots_mss(save_dir)
+            if saved_screens:
+                logging.info(f"Скриншоты созданы: {saved_screens}")
 
-            if send_email and saved_screens and self.email_sender.enabled:
-                subject = f"Скриншоты от {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-                body = "Автоматически отправленные скриншоты"
-                self.email_sender.send_email(subject, body, saved_screens)
-                
-            return saved_screens
+                if send_email and saved_screens and self.email_sender.enabled:
+                    subject = f"Скриншоты от {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                    body = "Автоматически отправленные скриншоты"
+                    self.email_sender.send_email(subject, body, saved_screens)
+                    
+                return saved_screens
         except Exception as e:
             print(f"Ошибка в задаче: {e}")
             return None
