@@ -68,3 +68,11 @@
 2025-09-17 14:52:34.265766: expected str, bytes or os.PathLike object, not bool
 2025-09-17 14:53:34.275786: expected str, bytes or os.PathLike object, not bool
 2025-09-17 14:54:34.262965: expected str, bytes or os.PathLike object, not bool
+2025-09-20 17:41:00.019673: expected str, bytes or os.PathLike object, not bool
+2025-09-20 17:41:19.795498: expected str, bytes or os.PathLike object, not bool
+2025-09-20 17:42:19.801490: expected str, bytes or os.PathLike object, not bool
+2025-09-20 17:43:19.799168: expected str, bytes or os.PathLike object, not bool
+2025-09-20 17:44:19.800303: expected str, bytes or os.PathLike object, not bool
+2025-09-20 17:47:00.022190: expected str, bytes or os.PathLike object, not bool
+2025-09-20 17:48:00.015859: expected str, bytes or os.PathLike object, not bool
+2025-09-20 17:51:00.008028: expected str, bytes or os.PathLike object, not bool

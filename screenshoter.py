@@ -9,9 +9,10 @@ logger = logging.getLogger(__name__)
 
 def take_screenshots_mss(save_dir = 'place_sreen'):
     try:
-
+        abs_path = os.path.abspath(save_dir)
+        logging.info(f"Сохранение скриншотов в: {abs_path}")
         
-        os.makedirs(save_dir, exist_ok = True)
+        os.makedirs(abs_path, exist_ok=True)
         timestamp = datetime.now().strftime("%d%m%Y_%H%M%S")
         saved_screen = []
 
@@ -34,16 +35,19 @@ def take_screenshots_mss(save_dir = 'place_sreen'):
                     mss.tools.to_png(sct_img.rgb, sct_img.size, output=filename)
                     logging.info(f"Создание скриншота: {filename}")
                     saved_screen.append(filename)
+                    logging.info(f"Скриншот сохранен: {filename}")
 
 
 
             else:
                 filename = os.path.join(save_dir, f'screenshot_{timestamp}.png')
+                logging.info(f'Создание скриншота: {filename}')
                 
                 sct_img = sct.grab(count_monitors[1])
                 mss.tools.to_png(sct_img.rgb, sct_img.size, output=filename)
-                logging.info(f"Создание скриншота: {filename}")
+                
                 saved_screen.append(filename)
+                logging.info(f"Скриншот сохранен: {filename}")
 
         logging.info(f"Успешно создано {len(saved_screen)} скриншотов")
         return saved_screen

@@ -14,10 +14,11 @@ from screenshoter import take_screenshots_mss
 class ScreenshotApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.scheduler = ScreenshotScheduler("screenshots.db")
+        self.scheduler = ScreenshotScheduler()
         self.setup_gui()
         self.setup_tray()
         self.setup_signals()
+        self.load_email_settings()
         self.populate_jobs_list() 
 
     
@@ -71,7 +72,7 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         main_layout.addWidget(self.email_cron_checkbox)
 
         button_layout = QtWidgets.QHBoxLayout()
-        self.start_btn = QtWidgets.QPushButton("Старт")
+        self.start_btn = QtWidgets.QPushButton("Запустить по расписанию")
         self.stop_btn = QtWidgets.QPushButton("Стоп")
         self.stop_btn.setEnabled(False)
 
@@ -103,7 +104,7 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         self.interval_spinbox.setValue(60)  
         interval_layout.addWidget(self.interval_spinbox)
         
-        self.interval_start_btn = QtWidgets.QPushButton("Старт интервал")
+        self.interval_start_btn = QtWidgets.QPushButton("Запустить по интервалу")
         interval_layout.addWidget(self.interval_start_btn)
         
         self.email_interval_checkbox = QtWidgets.QCheckBox("Отправить скриншот по email")
@@ -151,6 +152,9 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         
         email_settings_group.setLayout(email_settings_layout)
         email_layout.addWidget(email_settings_group)
+
+        self.test_email_btn = QtWidgets.QPushButton("Тест отправки email")
+        email_settings_layout.addWidget(self.test_email_btn, 7, 0, 1, 2)
         
         # Загрузка сохраненных настроек
         self.load_email_settings()
@@ -208,6 +212,7 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         self.interval_start_btn.clicked.connect(self.on_interval_start)
         self.jobs_list.itemDoubleClicked.connect(self.on_job_double_clicked)
         self.test_email_btn.clicked.connect(self.on_test_email) 
+        
         
 
 
@@ -270,7 +275,7 @@ class ScreenshotApp(QtWidgets.QMainWindow):
                 hour = hour,
                 minute = minute,
                 days_of_week = selected_days,
-                args = ['screenshots']
+                args = ['screenshots', send_email]
                 )
             
             if result:
@@ -341,7 +346,11 @@ class ScreenshotApp(QtWidgets.QMainWindow):
             if result:
                 
                 if not self.scheduler.is_running():
+                    logging.info("Запускаем планировщик...")
                     self.scheduler.start()
+                    logging.info("Планировщик запущен")
+                else:
+                    logging.info("Планировщик уже запущен")
                     
                 #
                 self.status_label.setText(f"Статус: Активно - интервал повторений каждые: {minutes} мин")
@@ -423,8 +432,22 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         self.jobs_list.clear()
              
         for job_id in self.scheduler.jobs.keys():
+
+            widget = QtWidgets.QWidget()
+            layout = QtWidgets.QHBoxLayout(widget)
+
+
             job_info = self.scheduler.get_job_info(job_id)
-        
+            label = QtWidgets.QLabel(f"{job_id}: {job_info}")
+            layout.addWidget(label)
+
+            stop_btn = QtWidgets.QPushButton("Стоп")
+            stop_btn.clicked.connect(lambda checked, id=job_id: self.stop_single_job(id))
+            layout.addWidget(stop_btn)
+
+            item = QtWidgets.QListWidgetItem(self.jobs_list)
+            item.setSizeHint(widget.sizeHint())
+            self.jobs_list.setItemWidget(item, widget)
         
             if job_id.startswith('interval_screenshot'):
                 task_type = "Интервальная"
@@ -541,25 +564,69 @@ class ScreenshotApp(QtWidgets.QMainWindow):
 
     def on_test_email(self):
         
-        self.scheduler.configure_email(
-            self.smtp_server_edit.text(),
-            self.smtp_port_edit.value(),
-            self.email_login_edit.text(),
-            self.email_password_edit.text(),
-            self.email_from_edit.text(),
-            self.email_to_edit.text(),
-            self.email_enabled_checkbox.isChecked()
-        )
-        
-        
-        if self.scheduler.email_sender.send_email(
-            "Тестовое сообщение от Скриншотера",
-            "Это тестовое сообщение было отправлено для проверки настроек email."
-        ):
-            QMessageBox.information(self, "Успех", "Тестовое сообщение отправлено успешно!")
-        else:
-            QMessageBox.critical(self, "Ошибка", "Не удалось отправить тестовое сообщение. Проверьте настройки.")
+        try:
+            
+            smtp_server = self.smtp_server_edit.text()
+            smtp_port = self.smtp_port_edit.value()
+            username = self.email_login_edit.text()
+            password = self.email_password_edit.text()
+            from_addr = self.email_from_edit.text()
+            to_addr = self.email_to_edit.text()
+            enabled = self.email_enabled_checkbox.isChecked()
+            
+            
+            self.save_email_settings()
+            
+            
+            self.scheduler.configure_email(smtp_server, smtp_port, username, password, 
+                                        from_addr, to_addr, enabled)
+            
+            
+            logging.info("Создание тестового скриншота...")
+            test_screenshots = take_screenshots_mss('test_screenshots')
+            
+            if not test_screenshots:
+                QMessageBox.critical(self, "Ошибка", "Не удалось создать тестовый скриншот")
+                return
+                
+            
+            logging.info("Отправка тестового email...")
+            success = self.scheduler.email_sender.send_email(
+                "Тестовое письмо от Скриншотера",
+                "Это тестовое письмо было отправлено для проверки настроек email.\n\n"
+                "Если вы получили это письмо со скриншотом, значит настройки корректны!",
+                test_screenshots
+            )
+            
+            if success:
+                QMessageBox.information(self, "Успех", 
+                                    "Тестовое письмо отправлено успешно!\n\n"
+                                    "Проверьте вашу почту (и папку 'Спам').")
+            else:
+                QMessageBox.critical(self, "Ошибка", 
+                                "Не удалось отправить тестовое письмо.\n\n"
+                                "Проверьте настройки SMTP и подключение к интернету.")
+                
+        except Exception as e:
+            logging.error(f"Ошибка при тестировании email: {e}")
+            QMessageBox.critical(self, "Ошибка", 
+                            f"Ошибка при тестировании email:\n{str(e)}")
 
+    def stop_single_job(self, job_id):
+   
+        try:
+            
+            if self.scheduler.remove_existing_job(job_id):
+                logging.info(f"Задача {job_id} остановлена и удалена")
+                self.populate_jobs_list()  
+                self.status_label.setText(f"Задача {job_id} остановлена")
+            else:
+                logging.error(f"Не удалось найти или удалить задачу {job_id}")
+        except Exception as e:
+            logging.error(f"Ошибка при остановке задачи {job_id}: {e}")
+
+    
+        
 
 def main():
     

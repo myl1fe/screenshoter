@@ -1,0 +1,4 @@
+pywin32==306
+pyinstaller==5.13.2
+apscheduler==3.10.4
+pypiwin32==223

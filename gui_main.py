@@ -10,7 +10,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     filename='logs/app.log'  
 )
-logger = logging.getLogger(__name__)
+logging = logging.getLogger(__name__)
 
 def handle_exception(exc_type, exc_value, exc_traceback):
     
@@ -18,7 +18,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
         
-    logger.error("Необработанное исключение:", 
+    logging.error("Необработанное исключение:", 
                  exc_info=(exc_type, exc_value, exc_traceback))
 
 
@@ -38,13 +38,13 @@ def main():
         window = ScreenshotApp()
         window.show()
         
-        logger.info("GUI приложение запущено успешно")
+        logging.info("GUI приложение запущено успешно")
         
         
         sys.exit(app.exec_())
         
     except Exception as e:
-        logger.error(f"Ошибка при запуске приложения: {e}")
+        logging.error(f"Ошибка при запуске приложения: {e}")
         
         QtWidgets.QMessageBox.critical(None, "Ошибка запуска", 
                                       f"Не удалось запустить приложение:\n{str(e)}")
