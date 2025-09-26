@@ -15,6 +15,7 @@ import atexit
 import os
 from pathlib import Path
 import sys
+import psutil
 
 
 logging.basicConfig()
@@ -54,8 +55,19 @@ class ScreenshotScheduler:
     
     def check_service_mode(self):        
         try:
-            
+            # Проверяем аргументы командной строки
+            if len(sys.argv) > 1 and sys.argv[1] == "service":
+                return True
+                
+            # Проверяем, запущен ли как служба Windows
             if 'win32service' in sys.modules:
+                return True
+                
+            # Дополнительная проверка для NSSM
+            
+            current_process = psutil.Process()
+            parent_name = current_process.parent().name().lower()
+            if 'nssm' in parent_name or 'services.exe' in parent_name:
                 return True
             
             return False

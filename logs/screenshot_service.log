@@ -1,0 +1,110 @@
+2025-09-26 19:23:35,073 - INFO - Логирование настроено успешно
+2025-09-26 19:23:35,073 - INFO - === Запуск Screenshot Service ===
+2025-09-26 19:23:35,073 - INFO - Инициализация ScreenshotService...
+2025-09-26 19:23:35,333 - ERROR - Ошибка запуска службы: cannot import name 'TaskScheduler' from 'task_scheduler' (X:\works_project\screenshoter\task_scheduler.py)
+2025-09-26 19:23:35,333 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\main.py", line 45, in start
+    from task_scheduler import TaskScheduler
+ImportError: cannot import name 'TaskScheduler' from 'task_scheduler' (X:\works_project\screenshoter\task_scheduler.py)
+
+2025-09-26 19:23:35,334 - ERROR - Не удалось запустить службу
+2025-09-26 19:23:35,334 - INFO - Остановка ScreenshotService
+2025-09-26 19:23:35,334 - INFO - ScreenshotService остановлен
+2025-09-26 19:23:35,334 - INFO - === Служба завершена ===
+2025-09-26 19:23:37,461 - INFO - Логирование настроено успешно
+2025-09-26 19:23:37,461 - INFO - === Запуск Screenshot Service ===
+2025-09-26 19:23:37,461 - INFO - Инициализация ScreenshotService...
+2025-09-26 19:23:37,720 - ERROR - Ошибка запуска службы: cannot import name 'TaskScheduler' from 'task_scheduler' (X:\works_project\screenshoter\task_scheduler.py)
+2025-09-26 19:23:37,720 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\main.py", line 45, in start
+    from task_scheduler import TaskScheduler
+ImportError: cannot import name 'TaskScheduler' from 'task_scheduler' (X:\works_project\screenshoter\task_scheduler.py)
+
+2025-09-26 19:23:37,720 - ERROR - Не удалось запустить службу
+2025-09-26 19:23:37,721 - INFO - Остановка ScreenshotService
+2025-09-26 19:23:37,721 - INFO - ScreenshotService остановлен
+2025-09-26 19:23:37,721 - INFO - === Служба завершена ===
+2025-09-26 19:23:41,847 - INFO - Логирование настроено успешно
+2025-09-26 19:23:41,847 - INFO - === Запуск Screenshot Service ===
+2025-09-26 19:23:41,847 - INFO - Инициализация ScreenshotService...
+2025-09-26 19:23:42,105 - ERROR - Ошибка запуска службы: cannot import name 'TaskScheduler' from 'task_scheduler' (X:\works_project\screenshoter\task_scheduler.py)
+2025-09-26 19:23:42,105 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\main.py", line 45, in start
+    from task_scheduler import TaskScheduler
+ImportError: cannot import name 'TaskScheduler' from 'task_scheduler' (X:\works_project\screenshoter\task_scheduler.py)
+
+2025-09-26 19:23:42,105 - ERROR - Не удалось запустить службу
+2025-09-26 19:23:42,105 - INFO - Остановка ScreenshotService
+2025-09-26 19:23:42,105 - INFO - ScreenshotService остановлен
+2025-09-26 19:23:42,107 - INFO - === Служба завершена ===
+2025-09-26 19:23:50,232 - INFO - Логирование настроено успешно
+2025-09-26 19:23:50,232 - INFO - === Запуск Screenshot Service ===
+2025-09-26 19:23:50,232 - INFO - Инициализация ScreenshotService...
+2025-09-26 19:23:50,498 - ERROR - Ошибка запуска службы: cannot import name 'TaskScheduler' from 'task_scheduler' (X:\works_project\screenshoter\task_scheduler.py)
+2025-09-26 19:23:50,498 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\main.py", line 45, in start
+    from task_scheduler import TaskScheduler
+ImportError: cannot import name 'TaskScheduler' from 'task_scheduler' (X:\works_project\screenshoter\task_scheduler.py)
+
+2025-09-26 19:23:50,498 - ERROR - Не удалось запустить службу
+2025-09-26 19:23:50,498 - INFO - Остановка ScreenshotService
+2025-09-26 19:23:50,499 - INFO - ScreenshotService остановлен
+2025-09-26 19:23:50,499 - INFO - === Служба завершена ===
+2025-09-26 19:24:06,623 - INFO - Логирование настроено успешно
+2025-09-26 19:24:06,623 - INFO - === Запуск Screenshot Service ===
+2025-09-26 19:24:06,623 - INFO - Инициализация ScreenshotService...
+2025-09-26 19:24:06,892 - ERROR - Ошибка запуска службы: cannot import name 'TaskScheduler' from 'task_scheduler' (X:\works_project\screenshoter\task_scheduler.py)
+2025-09-26 19:24:06,892 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\main.py", line 45, in start
+    from task_scheduler import TaskScheduler
+ImportError: cannot import name 'TaskScheduler' from 'task_scheduler' (X:\works_project\screenshoter\task_scheduler.py)
+
+2025-09-26 19:24:06,892 - ERROR - Не удалось запустить службу
+2025-09-26 19:24:06,893 - INFO - Остановка ScreenshotService
+2025-09-26 19:24:06,893 - INFO - ScreenshotService остановлен
+2025-09-26 19:24:06,893 - INFO - === Служба завершена ===
+2025-09-26 19:24:39,030 - INFO - Логирование настроено успешно
+2025-09-26 19:24:39,030 - INFO - === Запуск Screenshot Service ===
+2025-09-26 19:24:39,030 - INFO - Инициализация ScreenshotService...
+2025-09-26 19:24:39,329 - ERROR - Ошибка запуска службы: cannot import name 'TaskScheduler' from 'task_scheduler' (X:\works_project\screenshoter\task_scheduler.py)
+2025-09-26 19:24:39,330 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\main.py", line 45, in start
+    from task_scheduler import TaskScheduler
+ImportError: cannot import name 'TaskScheduler' from 'task_scheduler' (X:\works_project\screenshoter\task_scheduler.py)
+
+2025-09-26 19:24:39,330 - ERROR - Не удалось запустить службу
+2025-09-26 19:24:39,330 - INFO - Остановка ScreenshotService
+2025-09-26 19:24:39,330 - INFO - ScreenshotService остановлен
+2025-09-26 19:24:39,330 - INFO - === Служба завершена ===
+2025-09-26 19:25:43,461 - INFO - Логирование настроено успешно
+2025-09-26 19:25:43,461 - INFO - === Запуск Screenshot Service ===
+2025-09-26 19:25:43,461 - INFO - Инициализация ScreenshotService...
+2025-09-26 19:25:43,735 - ERROR - Ошибка запуска службы: cannot import name 'TaskScheduler' from 'task_scheduler' (X:\works_project\screenshoter\task_scheduler.py)
+2025-09-26 19:25:43,736 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\main.py", line 45, in start
+    from task_scheduler import TaskScheduler
+ImportError: cannot import name 'TaskScheduler' from 'task_scheduler' (X:\works_project\screenshoter\task_scheduler.py)
+
+2025-09-26 19:25:43,736 - ERROR - Не удалось запустить службу
+2025-09-26 19:25:43,736 - INFO - Остановка ScreenshotService
+2025-09-26 19:25:43,736 - INFO - ScreenshotService остановлен
+2025-09-26 19:25:43,736 - INFO - === Служба завершена ===
+2025-09-26 19:27:20,524 - INFO - Логирование настроено успешно
+2025-09-26 19:27:20,524 - INFO - === Запуск Screenshot Service ===
+2025-09-26 19:27:20,525 - INFO - Инициализация ScreenshotService...
+2025-09-26 19:27:20,791 - DEBUG - Looking up time zone info from registry
+2025-09-26 19:27:20,805 - INFO - Scheduler started
+2025-09-26 19:27:20,805 - DEBUG - Looking for jobs to run
+2025-09-26 19:27:20,805 - INFO - Планировщик запущен
+2025-09-26 19:27:20,805 - DEBUG - No jobs; waiting until a job is added
+2025-09-26 19:27:20,805 - INFO - ScreenshotService успешно запущен
+2025-09-26 19:27:20,806 - INFO - Служба запущена, вход в основной цикл...
+2025-09-26 19:38:36,855 - INFO - Получен сигнал прерывания
+2025-09-26 19:38:36,855 - INFO - Остановка ScreenshotService
+2025-09-26 19:38:36,855 - INFO - Scheduler has been shut down
+2025-09-26 19:38:36,855 - DEBUG - Looking for jobs to run
+2025-09-26 19:38:36,856 - DEBUG - No jobs; waiting until a job is added
+2025-09-26 19:38:36,856 - INFO - Планировщик остановлен
+2025-09-26 19:38:36,856 - INFO - ScreenshotService остановлен
+2025-09-26 19:38:36,856 - INFO - === Служба завершена ===
+2025-09-26 19:38:36,856 - INFO - Планировщик остановлен
