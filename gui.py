@@ -7,6 +7,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QSystemTrayIcon, QMenu, QAction, QMessageBox
 from task_scheduler import ScreenshotScheduler
 from screenshoter import take_screenshots_mss
+from config_manager import ConfigManager
 
 
 
@@ -19,7 +20,8 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         self.setup_tray()
         self.setup_signals()
         self.load_email_settings()
-        self.populate_jobs_list() 
+        self.populate_jobs_list()
+        self.config_manager = ConfigManager()  
 
     
     def setup_gui(self):
@@ -625,6 +627,38 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         except Exception as e:
             logging.error(f"Ошибка при остановке задачи {job_id}: {e}")
 
+    def load_config_to_ui(self):
+        """Загрузка конфигурации в интерфейс"""
+        try:
+            # Загрузка email настроек
+            email_settings = self.config_manager.get_email_settings()
+            # ... заполнение полей email
+            
+            # Загрузка задач
+            jobs = self.config_manager.get_jobs()
+            # ... отображение задач в интерфейсе
+            
+        except Exception as e:
+            self.show_error(f"Ошибка загрузки конфига: {e}")
+    
+    def save_config_from_ui(self):
+        """Сохранение конфигурации из интерфейса"""
+        try:
+            # Сохранение email настроек
+            email_settings = {
+                'enabled': self.email_enabled_checkbox.isChecked(),
+                'smtp_server': self.smtp_server_input.text(),
+                # ... остальные поля
+            }
+            self.config_manager.update_email_settings(email_settings)
+            
+            # Сохранение задач
+            # ... сбор данных о задачах из интерфейса
+            
+            self.show_info("Настройки сохранены")
+            
+        except Exception as e:
+            self.show_error(f"Ошибка сохранения: {e}")
     
         
 

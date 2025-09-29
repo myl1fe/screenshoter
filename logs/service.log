@@ -1,0 +1,188 @@
+2025-09-29 19:52:29,132 - INFO - === Запуск Screenshot Service ===
+2025-09-29 19:52:29,409 - ERROR - Ошибка запуска службы: name 'os' is not defined
+2025-09-29 19:52:29,410 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\service_launcher.py", line 31, in main
+    run_service()
+  File "X:\works_project\screenshoter\main.py", line 26, in run_service
+    setup_logging()
+  File "X:\works_project\screenshoter\main.py", line 12, in setup_logging
+    if not os.path.exists(log_dir):
+           ^^
+NameError: name 'os' is not defined
+
+2025-09-29 19:52:31,538 - INFO - === Запуск Screenshot Service ===
+2025-09-29 19:52:31,806 - ERROR - Ошибка запуска службы: name 'os' is not defined
+2025-09-29 19:52:31,807 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\service_launcher.py", line 31, in main
+    run_service()
+  File "X:\works_project\screenshoter\main.py", line 26, in run_service
+    setup_logging()
+  File "X:\works_project\screenshoter\main.py", line 12, in setup_logging
+    if not os.path.exists(log_dir):
+           ^^
+NameError: name 'os' is not defined
+
+2025-09-29 19:52:35,936 - INFO - === Запуск Screenshot Service ===
+2025-09-29 19:52:36,224 - ERROR - Ошибка запуска службы: name 'os' is not defined
+2025-09-29 19:52:36,226 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\service_launcher.py", line 31, in main
+    run_service()
+  File "X:\works_project\screenshoter\main.py", line 26, in run_service
+    setup_logging()
+  File "X:\works_project\screenshoter\main.py", line 12, in setup_logging
+    if not os.path.exists(log_dir):
+           ^^
+NameError: name 'os' is not defined
+
+2025-09-29 19:52:44,355 - INFO - === Запуск Screenshot Service ===
+2025-09-29 19:52:44,645 - ERROR - Ошибка запуска службы: name 'os' is not defined
+2025-09-29 19:52:44,646 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\service_launcher.py", line 31, in main
+    run_service()
+  File "X:\works_project\screenshoter\main.py", line 26, in run_service
+    setup_logging()
+  File "X:\works_project\screenshoter\main.py", line 12, in setup_logging
+    if not os.path.exists(log_dir):
+           ^^
+NameError: name 'os' is not defined
+
+2025-09-29 19:53:00,770 - INFO - === Запуск Screenshot Service ===
+2025-09-29 19:53:01,037 - ERROR - Ошибка запуска службы: name 'os' is not defined
+2025-09-29 19:53:01,038 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\service_launcher.py", line 31, in main
+    run_service()
+  File "X:\works_project\screenshoter\main.py", line 26, in run_service
+    setup_logging()
+  File "X:\works_project\screenshoter\main.py", line 12, in setup_logging
+    if not os.path.exists(log_dir):
+           ^^
+NameError: name 'os' is not defined
+
+2025-09-29 19:53:33,159 - INFO - === Запуск Screenshot Service ===
+2025-09-29 19:53:33,429 - ERROR - Ошибка запуска службы: name 'os' is not defined
+2025-09-29 19:53:33,430 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\service_launcher.py", line 31, in main
+    run_service()
+  File "X:\works_project\screenshoter\main.py", line 26, in run_service
+    setup_logging()
+  File "X:\works_project\screenshoter\main.py", line 12, in setup_logging
+    if not os.path.exists(log_dir):
+           ^^
+NameError: name 'os' is not defined
+
+2025-09-29 19:54:37,546 - INFO - === Запуск Screenshot Service ===
+2025-09-29 19:54:37,816 - ERROR - Ошибка запуска службы: name 'os' is not defined
+2025-09-29 19:54:37,817 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\service_launcher.py", line 31, in main
+    run_service()
+  File "X:\works_project\screenshoter\main.py", line 26, in run_service
+    setup_logging()
+  File "X:\works_project\screenshoter\main.py", line 12, in setup_logging
+    if not os.path.exists(log_dir):
+           ^^
+NameError: name 'os' is not defined
+
+2025-09-29 19:56:45,946 - INFO - === Запуск Screenshot Service ===
+2025-09-29 19:56:46,241 - ERROR - Ошибка запуска службы: name 'os' is not defined
+2025-09-29 19:56:46,242 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\service_launcher.py", line 31, in main
+    run_service()
+  File "X:\works_project\screenshoter\main.py", line 26, in run_service
+    setup_logging()
+  File "X:\works_project\screenshoter\main.py", line 12, in setup_logging
+    if not os.path.exists(log_dir):
+           ^^
+NameError: name 'os' is not defined
+
+2025-09-29 19:58:54,368 - INFO - === Запуск Screenshot Service ===
+2025-09-29 19:58:54,644 - ERROR - Ошибка запуска службы: name 'os' is not defined
+2025-09-29 19:58:54,645 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\service_launcher.py", line 31, in main
+    run_service()
+  File "X:\works_project\screenshoter\main.py", line 26, in run_service
+    setup_logging()
+  File "X:\works_project\screenshoter\main.py", line 12, in setup_logging
+    if not os.path.exists(log_dir):
+           ^^
+NameError: name 'os' is not defined
+
+2025-09-29 20:01:02,772 - INFO - === Запуск Screenshot Service ===
+2025-09-29 20:01:03,053 - ERROR - Ошибка запуска службы: name 'os' is not defined
+2025-09-29 20:01:03,054 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\service_launcher.py", line 31, in main
+    run_service()
+  File "X:\works_project\screenshoter\main.py", line 26, in run_service
+    setup_logging()
+  File "X:\works_project\screenshoter\main.py", line 12, in setup_logging
+    if not os.path.exists(log_dir):
+           ^^
+NameError: name 'os' is not defined
+
+2025-09-29 20:03:11,184 - INFO - === Запуск Screenshot Service ===
+2025-09-29 20:03:11,481 - ERROR - Ошибка запуска службы: name 'os' is not defined
+2025-09-29 20:03:11,481 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\service_launcher.py", line 31, in main
+    run_service()
+  File "X:\works_project\screenshoter\main.py", line 26, in run_service
+    setup_logging()
+  File "X:\works_project\screenshoter\main.py", line 12, in setup_logging
+    if not os.path.exists(log_dir):
+           ^^
+NameError: name 'os' is not defined
+
+2025-09-29 20:05:19,625 - INFO - === Запуск Screenshot Service ===
+2025-09-29 20:05:19,626 - INFO - Конфиг не найден, создаем простой конфиг...
+2025-09-29 20:05:19,631 - INFO - Конфиг загружен: config.json
+2025-09-29 20:05:19,937 - ERROR - Ошибка запуска службы: name 'os' is not defined
+2025-09-29 20:05:19,938 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\service_launcher.py", line 42, in main
+    run_service()
+  File "X:\works_project\screenshoter\main.py", line 26, in run_service
+    setup_logging()
+  File "X:\works_project\screenshoter\main.py", line 12, in setup_logging
+    if not os.path.exists(log_dir):
+           ^^
+NameError: name 'os' is not defined
+
+2025-09-29 20:07:28,069 - INFO - === Запуск Screenshot Service ===
+2025-09-29 20:07:28,069 - INFO - Конфиг не найден, создаем простой конфиг...
+2025-09-29 20:07:28,073 - INFO - Конфиг загружен: config.json
+2025-09-29 20:07:28,075 - ERROR - Ошибка запуска службы: unindent does not match any outer indentation level (task_scheduler.py, line 152)
+2025-09-29 20:07:28,077 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\service_launcher.py", line 41, in main
+    from main import run_service
+  File "X:\works_project\screenshoter\main.py", line 6, in <module>
+    from task_scheduler import ScreenshotScheduler
+  File "X:\works_project\screenshoter\task_scheduler.py", line 152
+    try:
+        ^
+IndentationError: unindent does not match any outer indentation level
+
+2025-09-29 20:09:36,180 - INFO - === Запуск Screenshot Service ===
+2025-09-29 20:09:36,180 - INFO - Конфиг не найден, создаем простой конфиг...
+2025-09-29 20:09:36,184 - INFO - Конфиг загружен: config.json
+2025-09-29 20:09:36,448 - ERROR - Ошибка запуска службы: name 'os' is not defined
+2025-09-29 20:09:36,449 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\service_launcher.py", line 42, in main
+    run_service()
+  File "X:\works_project\screenshoter\main.py", line 26, in run_service
+    setup_logging()
+  File "X:\works_project\screenshoter\main.py", line 12, in setup_logging
+    if not os.path.exists(log_dir):
+           ^^
+NameError: name 'os' is not defined
+
+2025-09-29 20:11:44,576 - INFO - === Запуск Screenshot Service ===
+2025-09-29 20:11:44,577 - INFO - Конфиг не найден, создаем простой конфиг...
+2025-09-29 20:11:44,581 - INFO - Конфиг загружен: config.json
+2025-09-29 20:11:44,870 - ERROR - Ошибка запуска службы: name 'os' is not defined
+2025-09-29 20:11:44,871 - ERROR - Traceback (most recent call last):
+  File "X:\works_project\screenshoter\service_launcher.py", line 42, in main
+    run_service()
+  File "X:\works_project\screenshoter\main.py", line 26, in run_service
+    setup_logging()
+  File "X:\works_project\screenshoter\main.py", line 12, in setup_logging
+    if not os.path.exists(log_dir):
+           ^^
+NameError: name 'os' is not defined
+

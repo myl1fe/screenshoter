@@ -1,0 +1,41 @@
+{
+    "version": "1.0",
+    "service_settings": {
+      "enabled": true,
+      "check_interval": 30
+    },
+    "screenshot_settings": {
+      "default_save_dir": "screenshots",
+      "format": "png",
+      "quality": 85
+    },
+    "email_settings": {
+      "enabled": false,
+      "smtp_server": "",
+      "smtp_port": 587,
+      "username": "",
+      "password": "",
+      "from_addr": "",
+      "to_addr": ""
+    },
+    "jobs": [
+      {
+        "id": "interval_1",
+        "type": "interval",
+        "minutes": 5,
+        "enabled": true,
+        "save_dir": "screenshots",
+        "send_email": false
+      },
+      {
+        "id": "daily_1", 
+        "type": "cron",
+        "hour": 9,
+        "minute": 0,
+        "days_of_week": [1, 2, 3, 4, 5],
+        "enabled": true,
+        "save_dir": "screenshots",
+        "send_email": true
+      }
+    ]
+  }

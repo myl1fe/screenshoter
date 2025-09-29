@@ -17,6 +17,10 @@ from pathlib import Path
 import sys
 import psutil
 
+from config_manager import ConfigManager
+import time
+import threading
+import json
 
 logging.basicConfig()
 logging.getLogger('apscheduler').setLevel(logging.DEBUG)
@@ -35,13 +39,21 @@ email_config = {
 
 class ScreenshotScheduler:
     def __init__(self, db_path='scheduler.db'):
-
+        self.config_manager = ConfigManager(config_path)
         self.is_service = self.check_service_mode()
-        if self.is_service:
-            self.setup_service_logging()
-        else:
-            self.setup_app_logging()     
+        self.setup_logging()
 
+        # self.is_service = self.check_service_mode()
+        # if self.is_service:
+        #     self.setup_service_logging()
+        # else:
+        #     self.setup_app_logging()
+        #      
+        self.load_jobs_from_config()
+        
+        # Мониторинг изменений конфига
+        self.config_monitor_thread = None
+        self.is_running = False
 
         jobstores = {
             'default': MemoryJobStore()
@@ -51,6 +63,13 @@ class ScreenshotScheduler:
  
         atexit.register(self.shutdown)
         self.email_sender = EmailSender()
+        self.config_path = Path("config.json")
+        self.last_config_mod_time = 0
+        self.config_monitor_thread = None
+        self.is_running = False
+        
+        # Загружаем задачи из конфига при старте
+        self.load_jobs_from_config()
 
     
     def check_service_mode(self):        
@@ -111,10 +130,99 @@ class ScreenshotScheduler:
                 print(f"Ошибка в задаче: {e}")
                 return None
     
-    def is_running(self):
-        return self.scheduler.running
+    def setup_logging(self):
+        """Настройка логирования"""
+        log_level = logging.INFO
+        if self.is_service:
+            log_dir = Path("logs")
+            log_dir.mkdir(parents=True, exist_ok=True)
+            logging.basicConfig(
+                level=log_level,
+                format='%(asctime)s - %(levelname)s - %(message)s',
+                handlers=[
+                    logging.FileHandler(log_dir / "scheduler.log"),
+                    logging.StreamHandler()
+                ]
+            )
+        else:
+            logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
+    
+    def load_jobs_from_config(self):        
+        try:
+            if self.config_path.exists():
+                with open(self.config_path, 'r', encoding='utf-8') as f:
+                    config = json.load(f)
+                
+                # Здесь парсим конфиг и добавляем задачи в планировщик
+                # Пример (адаптируйте под структуру вашего конфига):
+                jobs = config.get('jobs', [])
+                for job in jobs:
+                    if job.get('enabled', True):
+                        # Добавляем задачу в планировщик
+                        # Используйте ваши существующие методы add_interval_job/add_cron_job
+                        pass
+                        
+                logging.info(f"Загружено {len(jobs)} задач из конфига")
+                
+        except Exception as e:
+            logging.error(f"Ошибка загрузки задач из конфига: {e}")
+    
+    def add_job_from_config(self, job_config):
+        """Добавление задачи из конфигурации"""
+        try:
+            job_id = job_config['id']
+            job_type = job_config['type']
+            args = [job_config.get('save_dir', 'screenshots'), job_config.get('send_email', False)]
+            
+            if job_type == 'interval':
+                minutes = job_config.get('minutes', 5)
+                self.add_interval_job(job_id, minutes, args)
+            elif job_type == 'cron':
+                hour = job_config.get('hour', 0)
+                minute = job_config.get('minute', 0)
+                days_of_week = job_config.get('days_of_week', [1,2,3,4,5])
+                self.add_cron_job(job_id, hour, minute, days_of_week, args)
+                
+        except Exception as e:
+            logging.error(f"Ошибка добавления задачи {job_config.get('id', 'unknown')}: {e}")
+    
+    def start_config_monitor(self):
+        """Запуск мониторинга изменений конфига"""
+        while self.is_running:
+            try:
+                if self.config_path.exists():
+                    current_mod_time = self.config_path.stat().st_mtime
+                    if current_mod_time > self.last_config_mod_time:
+                        logging.info("Обнаружены изменения в конфиге, перезагружаем задачи...")
+                        self.load_jobs_from_config()
+                        self.last_config_mod_time = current_mod_time
+                
+                time.sleep(10)  # Проверяем каждые 10 секунд
+            except Exception as e:
+                logging.error(f"Ошибка мониторинга конфига: {e}")
+                time.sleep(30)
+    
+    def _monitor_config_changes(self):
+        """Мониторинг изменений в конфиг файле"""
+        last_modified = self.config_manager.config_path.stat().st_mtime
+        
+        while self.is_running:
+            try:
+                current_modified = self.config_manager.config_path.stat().st_mtime
+                if current_modified > last_modified:
+                    logging.info("Обнаружены изменения в конфиге, перезагружаем задачи...")
+                    self.load_jobs_from_config()
+                    last_modified = current_modified
+                
+                time.sleep(10)  # Проверяем каждые 10 секунд
+            except Exception as e:
+                logging.error(f"Ошибка мониторинга конфига: {e}")
+                time.sleep(30)
+    
     
     def shutdown(self):
+        
+        self.is_running = False
         if self.scheduler.running:
             self.scheduler.shutdown()
         logging.info("Планировщик остановлен")
@@ -151,9 +259,11 @@ class ScreenshotScheduler:
         return self.scheduler.get_jobs()
     
     def start(self):
+        
         if not self.scheduler.running:
             self.scheduler.start()
-            logging.info("Планировщик запущен")
+            self.start_config_monitor()
+            logging.info("Планировщик запущен с мониторингом конфига")
     
     def add_cron_job(self, job_id, hour, minute, days_of_week, args=None):
         try:
@@ -253,5 +363,6 @@ class ScreenshotScheduler:
 
     # def configure_email(self, smtp_server, smtp_port, username, password, from_addr, to_addr, enabled):
         # self.configure_email_settings(smtp_server, smtp_port, username, password, from_addr, to_addr, enabled)
-
+    # def is_running(self):
+    #     return self.scheduler.running
     
