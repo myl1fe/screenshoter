@@ -22,6 +22,12 @@ import time
 import threading
 import json
 
+from screenshoter import take_screenshots_mss
+
+# Проверка что это функция
+print(f"take_screenshots_mss type: {type(take_screenshots_mss)}")
+print(f"take_screenshots_mss callable: {callable(take_screenshots_mss)}")
+
 logging.basicConfig()
 logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 
@@ -39,37 +45,29 @@ email_config = {
 
 class ScreenshotScheduler:
     def __init__(self, db_path='scheduler.db'):
-        self.config_manager = ConfigManager(config_path)
+        # Инициализация конфиг менеджера
+        self.config_manager = ConfigManager("app.config.json")
+        
         self.is_service = self.check_service_mode()
         self.setup_logging()
-
-        # self.is_service = self.check_service_mode()
-        # if self.is_service:
-        #     self.setup_service_logging()
-        # else:
-        #     self.setup_app_logging()
-        #      
-        self.load_jobs_from_config()
         
-        # Мониторинг изменений конфига
-        self.config_monitor_thread = None
-        self.is_running = False
-
+        # Инициализация планировщика
         jobstores = {
             'default': MemoryJobStore()
         }        
         self.scheduler = BackgroundScheduler(jobstores=jobstores)
         self.jobs = {}   
  
+        # Регистрация завершения и инициализация email
         atexit.register(self.shutdown)
         self.email_sender = EmailSender()
-        self.config_path = Path("config.json")
-        self.last_config_mod_time = 0
+        
+        # Загрузка задач из конфига
+        self.load_jobs_from_config()
+        
+        # Мониторинг изменений конфига (только для службы)
         self.config_monitor_thread = None
         self.is_running = False
-        
-        # Загружаем задачи из конфига при старте
-        self.load_jobs_from_config()
 
     
     def check_service_mode(self):        
@@ -114,7 +112,7 @@ class ScreenshotScheduler:
     def take_screenshot_handler(self, save_dir='screenshots', send_email=False):
             try:
                 logging.info(f"Выполнение задачи: save_dir={save_dir}, send_email={send_email}")
-                saved_screens = take_screenshots_mss(save_dir)
+                saved_screens = take_screenshots_mss(save_dir)  # ← Убедитесь, что это функция
                 if saved_screens:
                     logging.info(f"Скриншоты созданы: {saved_screens}")
                     
@@ -123,11 +121,9 @@ class ScreenshotScheduler:
                         body = "Автоматически отправленные скриншоты"
                         self.email_sender.send_email(subject, body, saved_screens)
                     
-                        #send_screenshot_email(saved_screens, "Запланированные: ")
-                        
                     return saved_screens
             except Exception as e:
-                print(f"Ошибка в задаче: {e}")
+                logging.error(f"Ошибка в задаче: {e}")
                 return None
     
     def setup_logging(self):
@@ -141,69 +137,66 @@ class ScreenshotScheduler:
                 format='%(asctime)s - %(levelname)s - %(message)s',
                 handlers=[
                     logging.FileHandler(log_dir / "scheduler.log"),
-                    logging.StreamHandler()
+                    logging.StreamHandler(sys.stdout)
                 ]
             )
         else:
-            logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
+            logging.basicConfig(
+                level=log_level,
+                format='%(asctime)s - %(levelname)s - %(message)s'
+            )
     
     def load_jobs_from_config(self):        
         try:
-            if self.config_path.exists():
-                with open(self.config_path, 'r', encoding='utf-8') as f:
-                    config = json.load(f)
-                
-                # Здесь парсим конфиг и добавляем задачи в планировщик
-                # Пример (адаптируйте под структуру вашего конфига):
-                jobs = config.get('jobs', [])
-                for job in jobs:
-                    if job.get('enabled', True):
-                        # Добавляем задачу в планировщик
-                        # Используйте ваши существующие методы add_interval_job/add_cron_job
-                        pass
-                        
-                logging.info(f"Загружено {len(jobs)} задач из конфига")
-                
+            
+            for job_id in list(self.jobs.keys()):
+                self.remove_existing_job(job_id)
+            
+            # Загружаем задачи из конфига
+            tasks = self.config_manager.get_tasks()
+            email_settings = self.config_manager.get_email_settings()
+            
+            # Настраиваем email
+            self.configure_email(**email_settings)
+            
+            # Добавляем задачи в планировщик
+            for task in tasks:
+                if task.get('enabled', True):
+                    self.add_job_from_config(task)
+            
+            logging.info(f"Загружено {len(tasks)} задач из конфига")
+            
         except Exception as e:
             logging.error(f"Ошибка загрузки задач из конфига: {e}")
+
     
-    def add_job_from_config(self, job_config):
+    def add_job_from_config(self, task):
         """Добавление задачи из конфигурации"""
         try:
-            job_id = job_config['id']
-            job_type = job_config['type']
-            args = [job_config.get('save_dir', 'screenshots'), job_config.get('send_email', False)]
+            task_id = task['id']
+            task_type = task['type']
+            args = task.get('args', ['screenshots', False])
             
-            if job_type == 'interval':
-                minutes = job_config.get('minutes', 5)
-                self.add_interval_job(job_id, minutes, args)
-            elif job_type == 'cron':
-                hour = job_config.get('hour', 0)
-                minute = job_config.get('minute', 0)
-                days_of_week = job_config.get('days_of_week', [1,2,3,4,5])
-                self.add_cron_job(job_id, hour, minute, days_of_week, args)
+            if task_type == 'interval':
+                minutes = task.get('minutes', 5)
+                self.add_interval_job(task_id, minutes, args)
+            elif task_type == 'cron':
+                hour = task.get('hour', 0)
+                minute = task.get('minute', 0)
+                days = task.get('days', [1, 2, 3, 4, 5])
+                self.add_cron_job(task_id, hour, minute, days, args)
                 
         except Exception as e:
-            logging.error(f"Ошибка добавления задачи {job_config.get('id', 'unknown')}: {e}")
+            logging.error(f"Ошибка добавления задачи {task.get('id', 'unknown')}: {e}")
     
     def start_config_monitor(self):
-        """Запуск мониторинга изменений конфига"""
-        while self.is_running:
-            try:
-                if self.config_path.exists():
-                    current_mod_time = self.config_path.stat().st_mtime
-                    if current_mod_time > self.last_config_mod_time:
-                        logging.info("Обнаружены изменения в конфиге, перезагружаем задачи...")
-                        self.load_jobs_from_config()
-                        self.last_config_mod_time = current_mod_time
-                
-                time.sleep(10)  # Проверяем каждые 10 секунд
-            except Exception as e:
-                logging.error(f"Ошибка мониторинга конфига: {e}")
-                time.sleep(30)
+        if self.is_service:
+            self.is_running = True
+            self.config_monitor_thread = threading.Thread(target=self._monitor_config_changes)
+            self.config_monitor_thread.daemon = True
+            self.config_monitor_thread.start()
     
     def _monitor_config_changes(self):
-        """Мониторинг изменений в конфиг файле"""
         last_modified = self.config_manager.config_path.stat().st_mtime
         
         while self.is_running:
@@ -260,10 +253,10 @@ class ScreenshotScheduler:
     
     def start(self):
         
-        if not self.scheduler.running:
-            self.scheduler.start()
-            self.start_config_monitor()
-            logging.info("Планировщик запущен с мониторингом конфига")
+        self.is_running = False
+        if self.scheduler.running:
+            self.scheduler.shutdown()
+        logging.info("Планировщик остановлен")
     
     def add_cron_job(self, job_id, hour, minute, days_of_week, args=None):
         try:
@@ -279,7 +272,7 @@ class ScreenshotScheduler:
                 timezone='Europe/Moscow'
             )
 
-            
+            logging.info(f"take_screenshot_handler: {self.take_screenshot_handler}, type: {type(self.take_screenshot_handler)}")
             job = self.scheduler.add_job(
                 self.take_screenshot_handler, 
                 trigger,
@@ -302,6 +295,7 @@ class ScreenshotScheduler:
                 self.remove_existing_job(job_id)
             
             trigger = IntervalTrigger(minutes=minutes)
+            logging.info(f"take_screenshot_handler: {self.take_screenshot_handler}, type: {type(self.take_screenshot_handler)}")
 
             job = self.scheduler.add_job(
                                         self.take_screenshot_handler,  
@@ -360,9 +354,49 @@ class ScreenshotScheduler:
             
         self.email_sender.configure(smtp_server, smtp_port, username, password, from_addr, to_addr, enabled)
 
-
-    # def configure_email(self, smtp_server, smtp_port, username, password, from_addr, to_addr, enabled):
-        # self.configure_email_settings(smtp_server, smtp_port, username, password, from_addr, to_addr, enabled)
-    # def is_running(self):
-    #     return self.scheduler.running
+    def add_task_to_scheduler(self, task_data):
+        """Добавление задачи в планировщик (вызывается при загрузке из конфига)"""
+        try:
+            task_id = task_data['id']
+            task_type = task_data['type']
+            args = task_data.get('args', ['screenshots', False])
+            
+            if task_type == 'interval':
+                minutes = task_data.get('minutes', 5)
+                return self.add_interval_job(task_id, minutes, args)
+            elif task_type == 'cron':
+                hour = task_data.get('hour', 0)
+                minute = task_data.get('minute', 0)
+                days = task_data.get('days', [1, 2, 3, 4, 5])
+                return self.add_cron_job(task_id, hour, minute, days, args)
+            return None
+                
+        except Exception as e:
+            logging.error(f"Ошибка добавления задачи {task_data.get('id', 'unknown')} в планировщик: {e}")
+            return None
+    def add_task_via_config(self, task_data):
+        """Добавление задачи через ConfigManager с автоматической перезагрузкой"""
+        if self.config_manager.add_task(task_data):
+            # Если служба запущена, перезагружаем задачи
+            if self.is_running:
+                self.load_jobs_from_config()
+            return True
+        return False
     
+    def update_task_via_config(self, task_id, task_data):
+        """Обновление задачи через ConfigManager с автоматической перезагрузкой"""
+        if self.config_manager.update_task(task_id, task_data):
+            # Если служба запущена, перезагружаем задачи
+            if self.is_running:
+                self.load_jobs_from_config()
+            return True
+        return False
+    
+    def delete_task_via_config(self, task_id):
+        """Удаление задачи через ConfigManager с автоматической перезагрузкой"""
+        if self.config_manager.delete_task(task_id):
+            # Если служба запущена, перезагружаем задачи
+            if self.is_running:
+                self.load_jobs_from_config()
+            return True
+        return False

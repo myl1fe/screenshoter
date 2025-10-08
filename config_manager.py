@@ -8,6 +8,8 @@ class ConfigManager:
         self.config_path = Path(config_path)
         self.config = None
         self.load_config()
+        
+
     
     def load_config(self):
         """Загрузка конфигурации из файла"""
@@ -22,6 +24,11 @@ class ConfigManager:
         except Exception as e:
             logging.error(f"Ошибка загрузки конфига: {e}")
             self.create_default_config()
+    
+    def task_exists(self, task_id):
+        
+        return self.get_task(task_id) is not None
+
     
     def create_default_config(self):
         """Создание конфигурации по умолчанию"""
@@ -76,36 +83,71 @@ class ConfigManager:
         return self.config.get("tasks", [])
     
     def add_task(self, task_data):
-        """Добавление новой задачи"""
-        tasks = self.config.get("tasks", [])
-        tasks.append(task_data)
-        self.config["tasks"] = tasks
-        return self.save_config()
+        try:
+            tasks = self.config.get("tasks", [])
+            
+            # Проверяем, нет ли задачи с таким ID
+            for task in tasks:
+                if task.get("id") == task_data.get("id"):
+                    logging.warning(f"Задача с ID {task_data['id']} уже существует")
+                    return False
+            
+            tasks.append(task_data)
+            self.config["tasks"] = tasks
+            return self.save_config()
+            
+        except Exception as e:
+            logging.error(f"Ошибка добавления задачи: {e}")
+            return False
     
     def update_task(self, task_id, task_data):
         """Обновление существующей задачи"""
-        tasks = self.config.get("tasks", [])
-        for i, task in enumerate(tasks):
-            if task.get("id") == task_id:
-                tasks[i] = task_data
-                self.config["tasks"] = tasks
-                return self.save_config()
-        return False
+        try:
+            tasks = self.config.get("tasks", [])
+            
+            for i, task in enumerate(tasks):
+                if task.get("id") == task_id:
+                    tasks[i] = task_data
+                    self.config["tasks"] = tasks
+                    return self.save_config()
+            
+            logging.warning(f"Задача с ID {task_id} не найдена")
+            return False
+        except Exception as e:
+            logging.error(f"Ошибка обновления задачи: {e}")
+            return False
     
     def delete_task(self, task_id):
-        """Удаление задачи"""
-        tasks = self.config.get("tasks", [])
-        tasks = [task for task in tasks if task.get("id") != task_id]
-        self.config["tasks"] = tasks
-        return self.save_config()
+        try:
+            tasks = self.config.get("tasks", [])
+            
+            new_tasks = [task for task in tasks if task.get("id") != task_id]
+            
+            if len(new_tasks) == len(tasks):
+                logging.warning(f"Задача с ID {task_id} не найдена")
+                return False
+            
+            self.config["tasks"] = new_tasks
+            return self.save_config()
+            
+        except Exception as e:
+            logging.error(f"Ошибка удаления задачи: {e}")
+            return False
+
     
     def get_task(self, task_id):
-        """Получение задачи по ID"""
-        tasks = self.config.get("tasks", [])
-        for task in tasks:
-            if task.get("id") == task_id:
-                return task
-        return None
+        try:
+            tasks = self.config.get("tasks", [])
+            
+            for task in tasks:
+                if task.get("id") == task_id:
+                    return task
+            
+            return None
+            
+        except Exception as e:
+            logging.error(f"Ошибка получения задачи: {e}")
+            return None
     
     # Методы для работы с настройками
     def get_email_settings(self):

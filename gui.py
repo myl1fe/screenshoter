@@ -11,20 +11,28 @@ from config_manager import ConfigManager
 
 
 
-
 class ScreenshotApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
+        self.config_manager = ConfigManager()
+
+        self.email_enabled_var = None
+        self.smtp_server_var = None
+
+
+        self.load_config_to_ui()
         self.scheduler = ScreenshotScheduler()
         self.setup_gui()
         self.setup_tray()
         self.setup_signals()
         self.load_email_settings()
         self.populate_jobs_list()
-        self.config_manager = ConfigManager()  
+         
 
     
     def setup_gui(self):
+
+        self.email_enabled_var = QtWidgets.QCheckBox()
         self.setWindowTitle('скриншотер')
         self.setGeometry(100, 100, 600, 500)  # Увеличим высоту для новых элементов
 
@@ -214,11 +222,75 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         self.interval_start_btn.clicked.connect(self.on_interval_start)
         self.jobs_list.itemDoubleClicked.connect(self.on_job_double_clicked)
         self.test_email_btn.clicked.connect(self.on_test_email) 
-        
-        
-
-
-
+    def add_task_from_ui(self):
+        try:
+            # Собираем данные из полей ввода
+            task_data = {
+                'id': f"task_{int(time.time())}",  # Уникальный ID
+                'type': self.task_type_combo.currentText(),
+                'enabled': True,
+                'args': [
+                    self.save_dir_input.text() or 'screenshots',
+                    self.send_email_check.isChecked()
+                ]
+            }
+            
+            # Добавляем параметры в зависимости от типа задачи
+            if task_data['type'] == 'interval':
+                task_data['minutes'] = self.interval_spin.value()
+            else:  # cron
+                task_data['hour'] = self.hour_spin.value()
+                task_data['minute'] = self.minute_spin.value()
+                task_data['days'] = self.get_selected_days()
+            
+            # Добавляем задачу через конфиг менеджер
+            if self.config_manager.add_task(task_data):
+                self.load_config_to_ui()  # Обновляем интерфейс
+                self.show_success("Задача успешно добавлена")
+                return True
+            else:
+                self.show_error("Не удалось добавить задачу")
+                return False
+                
+        except Exception as e:
+            self.show_error(f"Ошибка при добавлении задачи: {str(e)}")
+            return False
+    def extract_task_id_from_display(self, display_text):
+        """Извлекает ID задачи из текста отображения"""
+        # Формат: "✓ task_1234567890 (interval) - каждые 5 мин"
+        parts = display_text.split(' ')
+        if len(parts) >= 2:
+            return parts[1]  # Возвращаем часть после статуса (✓/✗)
+        return None
+    def delete_selected_task(self):
+        try:
+            selected_items = self.tasks_list.selectedItems()
+            if not selected_items:
+                self.show_warning("Выберите задачу для удаления")
+                return
+            
+            # Получаем ID задачи из выбранного элемента
+            selected_text = selected_items[0].text()
+            task_id = self.extract_task_id_from_display(selected_text)
+            
+            if not task_id:
+                self.show_error("Не удалось определить ID задачи")
+                return
+            
+            # Подтверждение удаления
+            reply = QMessageBox.question(self, 'Подтверждение', 
+                                       f'Вы уверены, что хотите удалить задачу "{task_id}"?',
+                                       QMessageBox.Yes | QMessageBox.No)
+            
+            if reply == QMessageBox.Yes:
+                if self.config_manager.delete_task(task_id):
+                    self.load_config_to_ui()  # Обновляем интерфейс
+                    self.show_success("Задача успешно удалена")
+                else:
+                    self.show_error("Не удалось удалить задачу")
+                    
+        except Exception as e:
+            self.show_error(f"Ошибка при удалении задачи: {str(e)}")
     def on_start(self):
         try:
             
@@ -308,7 +380,19 @@ class ScreenshotApp(QtWidgets.QMainWindow):
         except Exception as e:
             logging.error(f"Ошибка при запуске планировщика: {e}")
             QMessageBox.critical(self, "Ошибка", f"Не удалось запустить приложение: {str(e)}")
-
+    def get_selected_days(self):
+        """Получает выбранные дни недели"""
+        selected_days = []
+        days_mapping = {
+            'Пн': 1, 'Вт': 2, 'Ср': 3, 
+            'Чт': 4, 'Пт': 5, 'Сб': 6, 'Вс': 0
+        }
+        
+        for day_name, day_value in days_mapping.items():
+            if getattr(self, f'{day_name.lower()}_check').isChecked():
+                selected_days.append(day_value)
+        
+        return selected_days
     def on_interval_start(self):
         try:
             
@@ -628,39 +712,125 @@ class ScreenshotApp(QtWidgets.QMainWindow):
             logging.error(f"Ошибка при остановке задачи {job_id}: {e}")
 
     def load_config_to_ui(self):
-        """Загрузка конфигурации в интерфейс"""
-        try:
-            # Загрузка email настроек
-            email_settings = self.config_manager.get_email_settings()
-            # ... заполнение полей email
-            
-            # Загрузка задач
-            jobs = self.config_manager.get_jobs()
-            # ... отображение задач в интерфейсе
-            
-        except Exception as e:
-            self.show_error(f"Ошибка загрузки конфига: {e}")
     
+        try:
+            
+            email_settings = self.config_manager.get_email_settings()
+            if hasattr(self, 'email_enabled_var') and self.email_enabled_var is not None:
+                self.email_enabled_var.set(email_settings.get('enabled', False))
+            if hasattr(self, 'smtp_server_var') and self.smtp_server_var is not None:
+                self.smtp_server_var.set(email_settings.get('smtp_server', ''))
+            if hasattr(self, 'smtp_port_var') and self.smtp_port_var is not None:
+                self.smtp_port_var.set(email_settings.get('smtp_port', 587))
+            if hasattr(self, 'email_username_var') and self.email_username_var is not None:
+                self.email_username_var.set(email_settings.get('username', ''))
+            if hasattr(self, 'email_password_var') and self.email_password_var is not None:
+                self.email_password_var.set(email_settings.get('password', ''))
+            if hasattr(self, 'from_addr_var') and self.from_addr_var is not None:
+                self.from_addr_var.set(email_settings.get('from_addr', ''))
+            if hasattr(self, 'to_addr_var') and self.to_addr_var is not None:
+                self.to_addr_var.set(email_settings.get('to_addr', ''))
+            
+            # Загрузка настроек скриншотов (ДОБАВИЛ ПРОВЕРКИ НА НАЛИЧИЕ АТРИБУТОВ)
+            screenshot_settings = self.config_manager.get_screenshot_settings()
+            if hasattr(self, 'save_dir_var') and self.save_dir_var is not None:
+                self.save_dir_var.set(screenshot_settings.get('default_save_dir', 'screenshots'))
+            if hasattr(self, 'format_var') and self.format_var is not None:
+                self.format_var.set(screenshot_settings.get('format', 'png'))
+            if hasattr(self, 'quality_var') and self.quality_var is not None:
+                self.quality_var.set(screenshot_settings.get('quality', 85))
+            
+            # Загрузка задач (работает, так как tasks_listbox должен быть)
+            tasks = self.config_manager.get_tasks()
+            
+            # Очищаем список задач в интерфейсе
+            if hasattr(self, 'tasks_listbox') and self.tasks_listbox is not None:
+                self.tasks_listbox.clear()
+                
+                # Заполняем задачи в интерфейсе
+                for task in tasks:
+                    task_id = task.get('id', 'unknown')
+                    task_type = task.get('type', 'unknown')
+                    enabled = task.get('enabled', True)
+                    
+                    status = "✓" if enabled else "✗"
+                    display_text = f"{status} {task_id} ({task_type})"
+                    
+                    if task_type == 'interval':
+                        minutes = task.get('minutes', 0)
+                        display_text += f" - каждые {minutes} мин"
+                    elif task_type == 'cron':
+                        hour = task.get('hour', 0)
+                        minute = task.get('minute', 0)
+                        display_text += f" - {hour:02d}:{minute:02d}"
+                    
+                    self.tasks_listbox.addItem(display_text)
+            
+            logging.info(f"Загружено {len(tasks)} задач в интерфейс")
+                
+        except Exception as e:
+            logging.error(f"Ошибка загрузки конфига в интерфейс: {e}")
+            # ЗАМЕНИЛ self.show_error на QMessageBox
+            from PyQt5.QtWidgets import QMessageBox
+            QMessageBox.critical(None, "Ошибка", f"Ошибка загрузки настроек: {e}")
+
+# ← ДОБАВИЛ вспомогательный метод для форматирования дней
+def _format_days(self, days):
+    """Форматирует список дней в читаемый текст"""
+    if not days:
+        return ""
+    
+    day_names = {
+        0: "Вс", 1: "Пн", 2: "Вт", 3: "Ср", 
+        4: "Чт", 5: "Пт", 6: "Сб"
+    }
+    
+    formatted = [day_names.get(day, str(day)) for day in days]
+    return f"({', '.join(formatted)})"
+                
+            
+        
     def save_config_from_ui(self):
         """Сохранение конфигурации из интерфейса"""
         try:
-            # Сохранение email настроек
+            # Сохраняем настройки email
             email_settings = {
-                'enabled': self.email_enabled_checkbox.isChecked(),
-                'smtp_server': self.smtp_server_input.text(),
-                # ... остальные поля
+                'enabled': self.email_enabled_var.get(),
+                'smtp_server': self.smtp_server_var.get(),
+                'smtp_port': self.smtp_port_var.get(),
+                'username': self.email_username_var.get(),
+                'password': self.email_password_var.get(),
+                'from_addr': self.from_addr_var.get(),
+                'to_addr': self.to_addr_var.get()
             }
             self.config_manager.update_email_settings(email_settings)
             
-            # Сохранение задач
-            # ... сбор данных о задачах из интерфейса
+            # Сохраняем настройки скриншотов
+            screenshot_settings = {
+                'default_save_dir': self.save_dir_var.get(),
+                'format': self.format_var.get(),
+                'quality': self.quality_var.get()
+            }
+            self.config_manager.update_screenshot_settings(screenshot_settings)
             
-            self.show_info("Настройки сохранены")
+            # Задачи сохраняются отдельно при добавлении/удалении
+            # через методы add_task/delete_task
             
-        except Exception as e:
-            self.show_error(f"Ошибка сохранения: {e}")
-    
+            self.show_info("Настройки сохранены успешно")
+            return True
         
+        except Exception as e:
+            logging.error(f"Ошибка сохранения конфига: {e}")
+            self.show_error(f"Ошибка сохранения настроек: {e}")
+            return False
+    def show_error(self, message):
+        
+        QMessageBox.critical(self, "Ошибка", message)
+    def show_info(self, message):
+    
+        QMessageBox.information(self, "Информация", message)
+    def show_warning(self, message):
+        QMessageBox.warning(self, "Предупреждение", message)  
 
 def main():
     

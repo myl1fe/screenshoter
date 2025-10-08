@@ -1,9 +1,10 @@
-# service_launcher.py
+
 import sys
 import os
 import logging
 import time
 from pathlib import Path
+from config_manager import ConfigManager
 
 # Настройка логирования для службы
 log_dir = Path("logs")
